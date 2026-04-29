@@ -195,12 +195,12 @@
   .progress-sub { font-size: 12px; color: var(--text-muted); margin-top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* DIALOGS */
-  #confirmDlg, #saveDlg, #errorDlg, #previewDlg {
+  #confirmDlg, #errorDlg, #previewDlg {
     display: none; position: fixed; inset: 0; z-index: 997;
     background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
     align-items: center; justify-content: center;
   }
-  #confirmDlg.show, #saveDlg.show, #errorDlg.show, #previewDlg.show { display: flex; }
+  #confirmDlg.show, #errorDlg.show, #previewDlg.show { display: flex; }
   .dlg-box {
     background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
     padding: 28px 24px 20px; width: min(300px, calc(100vw - 40px)); text-align: center;
@@ -223,23 +223,7 @@
   .dlg-btn.danger { background: #dc2626; color: #fff; }
   .dlg-btn.danger:active { background: #b91c1c; }
 
-  /* SAVE OPTIONS */
-  .save-opts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
-  .save-opt {
-    display: flex; align-items: center; gap: 12px;
-    background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px;
-    padding: 14px 16px; cursor: pointer; transition: all 0.15s; touch-action: manipulation;
-  }
-  .save-opt:active, .save-opt.selected {
-    border-color: var(--accent); background: var(--accent-light);
-  }
-  .save-opt-icon { font-size: 22px; flex-shrink: 0; }
-  .save-opt-texts { text-align: left; flex: 1; }
-  .save-opt-title { font-size: 14px; font-weight: 600; }
-  .save-opt-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
-  .save-opt-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .save-opt.selected .save-opt-radio { border-color: var(--accent); background: var(--accent); }
-  .save-opt.selected .save-opt-radio::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+
 
   /* ERROR LIST */
   .error-list { text-align: left; margin-bottom: 18px; max-height: 160px; overflow-y: auto; }
@@ -359,36 +343,7 @@
   </div>
 </div>
 
-<!-- SAVE OPTIONS (multi-file) -->
-<div id="saveDlg">
-  <div class="dlg-box wide">
-    <div class="dlg-icon">💾</div>
-    <div class="dlg-title">저장 방식 선택</div>
-    <div class="dlg-sub" style="margin-bottom:14px;"><strong id="saveDlgCount"></strong>장의 리사이즈 결과를 어떻게 저장할까요?</div>
-    <div class="save-opts">
-      <div class="save-opt selected" id="saveOptAll" onclick="selectSaveOpt('all')">
-        <span class="save-opt-icon">📁</span>
-        <div class="save-opt-texts">
-          <div class="save-opt-title">개별 저장</div>
-          <div class="save-opt-sub">파일별로 순서대로 다운로드</div>
-        </div>
-        <div class="save-opt-radio"></div>
-      </div>
-      <div class="save-opt" id="saveOptZip" onclick="selectSaveOpt('zip')">
-        <span class="save-opt-icon">🗜️</span>
-        <div class="save-opt-texts">
-          <div class="save-opt-title">ZIP 압축 후 저장</div>
-          <div class="save-opt-sub">하나의 .zip 파일로 묶어서 다운로드</div>
-        </div>
-        <div class="save-opt-radio"></div>
-      </div>
-    </div>
-    <div class="dlg-btns">
-      <button class="dlg-btn cancel" id="saveDlgCancel">취소</button>
-      <button class="dlg-btn primary" id="saveDlgConfirm">저장 시작</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- ERROR MODAL -->
 <div id="errorDlg">
@@ -454,7 +409,6 @@ const longSideInput= document.getElementById('longSide');
 let images = [];
 let idCnt  = 0;
 let pvIdx  = 0;
-let saveMode = 'all';
 
 // ── FILE INPUT ──
 fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
@@ -630,24 +584,7 @@ previewImg.addEventListener('touchend', e => {
 window.addEventListener('popstate', () => {
   confirmDlg.classList.remove('show');
   previewDlg.classList.remove('show');
-  document.getElementById('saveDlg').classList.remove('show');
   document.getElementById('errorDlg').classList.remove('show');
-});
-
-// ── SAVE OPTION ──
-function selectSaveOpt(mode) {
-  saveMode = mode;
-  document.getElementById('saveOptAll').classList.toggle('selected', mode === 'all');
-  document.getElementById('saveOptZip').classList.toggle('selected', mode === 'zip');
-}
-document.getElementById('saveDlgCancel').addEventListener('click', () => {
-  document.getElementById('saveDlg').classList.remove('show');
-  if (history.state?.modal === 'save') history.back();
-});
-document.getElementById('saveDlgConfirm').addEventListener('click', () => {
-  document.getElementById('saveDlg').classList.remove('show');
-  if (history.state?.modal === 'save') history.back();
-  startResize();
 });
 
 // ── ERROR MODAL ──
@@ -659,16 +596,7 @@ document.getElementById('errorDlgClose').addEventListener('click', () => {
 btnResize.addEventListener('click', () => {
   const ready = images.filter(i => i.targetPx !== null);
   if (!ready.length) return;
-
-  if (ready.length === 1) {
-    startResize();
-    return;
-  }
-  // multi: show save options
-  document.getElementById('saveDlgCount').textContent = ready.length;
-  selectSaveOpt('all');
-  document.getElementById('saveDlg').classList.add('show');
-  history.pushState({ modal: 'save' }, '');
+  startResize();
 });
 
 // ── RESIZE CORE ──
@@ -718,19 +646,14 @@ async function startResize() {
   progressBar.style.width  = '93%';
   await tick();
 
-  if (blobs.length === 1 || saveMode === 'all') {
-    // Individual downloads
-    for (let i = 0; i < blobs.length; i++) {
-      const { blob, img } = blobs[i];
-      progressSub.textContent = img.name;
-      await tick();
-      const ext  = img.type === 'image/png' ? 'png' : 'jpg';
-      const base = img.name.replace(/\.[^.]+$/, '');
-      downloadBlob(blob, `${base}_resize1.${ext}`);
-      await new Promise(r => setTimeout(r, 200));
-    }
+  if (blobs.length === 1) {
+    // 1장: 바로 저장
+    const { blob, img } = blobs[0];
+    const ext  = img.type === 'image/png' ? 'png' : 'jpg';
+    const base = img.name.replace(/\.[^.]+$/, '');
+    downloadBlob(blob, `${base}_resize1.${ext}`);
   } else {
-    // ZIP
+    // 여러 장: 무조건 ZIP
     progressText.textContent = 'ZIP 생성 중...';
     const zip = new JSZip();
     blobs.forEach(({ blob, img }) => {
