@@ -670,7 +670,11 @@ async function startResize() {
   await new Promise(r => setTimeout(r, 300));
   const savedCount = blobs.length;
   overlay.classList.remove('show');
-  toast(`✅ ${savedCount}장 저장 완료`);
+  images.forEach(i => URL.revokeObjectURL(i.url));
+  images = [];
+  longSideInput.value = '';
+  render();
+  toast(`✅ ${savedCount}장 저장 완료 · 목록을 초기화했습니다`);
 }
 
 function resizeImage(imgData) {
